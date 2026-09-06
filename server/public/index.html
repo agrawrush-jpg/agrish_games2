@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>⚡ Agrish Web Gaming Hub</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ NAVBAR ═══ -->
+<header class="navbar">
+    <div class="nav-brand">
+        <span class="brand-icon">⚡</span>
+        <div class="brand-text">
+            <span class="brand-title">AGRISH HUB</span>
+            <span class="brand-sub">Poker &amp; Banker · Online Multiplayer</span>
+        </div>
+    </div>
+
+    <div class="nav-center" id="nav-center-area">
+        <!-- Populated by JS depending on current view -->
+    </div>
+
+    <div class="nav-user" id="nav-user-area">
+        <button class="btn btn-primary btn-sm" onclick="openAuthModal('login')">Sign In</button>
+        <button class="btn btn-gold btn-sm" onclick="openAuthModal('register')">Create Account</button>
+    </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════ MAIN ══════ -->
+<main class="container">
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- ══════════════ LOBBY VIEW ══════════════ -->
+    <section id="lobby-view" class="game-view">
+        <div class="lobby-hero">
+            <h1 class="lobby-title">⚡ Welcome to Agrish Hub</h1>
+            <p class="lobby-sub">Choose a game to join — or sign in to save your stats &amp; progress.</p>
+        </div>
+
+        <!-- Guest Quick-Join Banner -->
+        <div class="guest-banner" id="guest-banner">
+            <div class="guest-banner-text">
+                <strong>🎭 Play as Guest</strong>
+                <span>Jump in instantly — no account needed. Your chips won't be saved.</span>
+            </div>
+            <div class="guest-banner-actions">
+                <input type="text" id="guest-name-input" placeholder="Your name (optional)" maxlength="20">
+                <button class="btn btn-gold btn-sm" onclick="joinAsGuest()">Play as Guest ▶</button>
+            </div>
+        </div>
+
+        <!-- Game Cards -->
+        <div class="lobby-games-grid">
+            <!-- Poker -->
+            <div class="lobby-game-card" id="poker-lobby-card">
+                <div class="lgc-badge">♠ Texas Hold'em</div>
+                <h2 class="lgc-title">Poker</h2>
+                <p class="lgc-desc">Real-money-style Texas Hold'em with private hole cards, turn timers, AI coaching, and full showdown resolution.</p>
+                <div class="lgc-features">
+                    <span>🔒 Private Cards</span>
+                    <span>⏱ Turn Timer</span>
+                    <span>🤖 AI Coach</span>
+                    <span>👥 2–6 Players</span>
+                </div>
+                <div id="poker-tables-list" class="tables-list">
+                    <div class="tables-loading">Loading tables…</div>
+                </div>
+                <button class="btn btn-primary btn-block mt-12" onclick="joinPokerTable(null)">
+                    ▶ Join Best Available Table
+                </button>
+            </div>
+
+            <!-- Bank by Agrish -->
+            <div class="lobby-game-card bank-card">
+                <div class="lgc-badge">🎲 Dice Game</div>
+                <h2 class="lgc-title">Bank by Agrish</h2>
+                <p class="lgc-desc">Roll dice to grow the vault, bank your earnings before busting, and climb the live leaderboard. Original Agrish rules.</p>
+                <div class="lgc-features">
+                    <span>🎲 Dice Rolls</span>
+                    <span>🏦 Vault Banking</span>
+                    <span>👑 Live Leaderboard</span>
+                    <span>♾ Open Multiplayer</span>
+                </div>
+                <button class="btn btn-gold btn-block mt-12" onclick="joinBankGame()">
+                    ▶ Join Bank Game
+                </button>
+            </div>
+        </div>
+
+        <!-- Leaderboard Peek -->
+        <div class="card leaderboard-card">
+            <h3>🏆 Global Leaderboard</h3>
+            <div id="leaderboard-list" class="leaderboard-list">
+                <div class="tables-loading">Loading…</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════ POKER VIEW ══════════════ -->
+    <section id="poker-view" class="game-view hide">
+
+        <div class="poker-table">
+            <!-- Status Bar -->
+            <div class="table-header-info">
+                <div class="pot-badge">
+                    <span class="pot-label">POT</span>
+                    <span id="poker-pot-val" class="pot-amount">$0</span>
+                </div>
+                <div class="stage-badge">
+                    <span class="stage-label">STAGE</span>
+                    <span id="poker-stage-val" class="stage-name">WAITING</span>
+                </div>
+                <div class="turn-timer-badge" id="turn-timer-badge">
+                    <span class="timer-label">TURN</span>
+                    <span id="turn-timer-val" class="timer-val">—</span>
+                </div>
+                <div class="winner-badge hide" id="poker-winner-banner">
+                    <span id="poker-winner-text"></span>
+                </div>
+            </div>
+
+            <!-- AI Coach -->
+            <div class="coach-box" id="coach-box">
+                <div class="coach-title">🤖 POKER AI COACH</div>
+                <div class="coach-msg" id="coach-msg">Waiting for cards…</div>
+            </div>
+
+            <!-- Community Cards -->
+            <div class="community-board">
+                <div class="board-label">COMMUNITY CARDS</div>
+                <div class="cards-flex" id="community-cards-container">
+                    <div class="card-placeholder">Waiting for flop…</div>
+                </div>
+            </div>
+
+            <!-- Players Around the Table -->
+            <div class="table-players" id="poker-players-list">
+                <!-- Rendered dynamically -->
+            </div>
+
+            <!-- Player Dock: Hole Cards + Actions -->
+            <div class="player-dock">
+                <div class="hole-cards-section">
+                    <div class="dock-label">YOUR HOLE CARDS</div>
+                    <div class="cards-flex" id="my-hole-cards-container">
+                        <div class="card-placeholder">No cards dealt</div>
+                    </div>
+                </div>
+
+                <!-- Your-turn overlay -->
+                <div id="not-your-turn-msg" class="not-your-turn hide">
+                    ⌛ Waiting for your turn…
+                </div>
+
+                <div class="poker-controls" id="poker-controls">
+                    <div class="action-grid">
+                        <button class="btn btn-danger" id="fold-btn" onclick="pokerAction('fold')">FOLD</button>
+                        <button class="btn btn-primary" id="call-btn" onclick="pokerAction('call')">CHECK / CALL</button>
+                    </div>
+                    <div class="raise-row">
+                        <div class="raise-input-group">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" id="raise-input" value="40" min="20" step="10">
+                        </div>
+                        <button class="btn btn-gold" id="raise-btn" onclick="pokerRaise()">RAISE</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="activity-drawer card">
+            <div class="drawer-header" onclick="toggleLogs()">
+                <span>📜 Table Activity Log</span>
+                <span id="drawer-toggle-icon">▼</span>
+            </div>
+            <div class="drawer-body hide" id="drawer-body">
+                <ul id="game-event-logs"></ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════ BANK VIEW ══════════════ -->
+    <section id="bank-view" class="game-view hide">
+        <div class="bank-dashboard">
+            <!-- Leader Ticker -->
+            <div class="leader-ticker" id="bank-leader-ticker">
+                <span>👑 Realtime Leader: Calculating…</span>
+            </div>
+
+            <!-- Bank Vault -->
+            <div class="vault-card">
+                <div class="vault-title">🏛️ BANK VAULT TREASURY</div>
+                <div class="vault-amount" id="bank-vault-val">$5,000</div>
+                <div class="vault-sub">Round <span id="bank-round-num">1</span></div>
+            </div>
+
+            <!-- Dice Arena -->
+            <div class="dice-arena">
+                <h3>🎲 Roll Dice or Collect Bank</h3>
+                <div class="dice-actions">
+                    <button class="btn btn-primary btn-lg" onclick="bankAction('roll')">ROLL DICE</button>
+                    <button class="btn btn-gold btn-lg" onclick="bankAction('bank')">BANK (COLLECT)</button>
+                </div>
+                <div class="borrow-return-box">
+                    <h4>Vault Transactions</h4>
+                    <div class="trans-row">
+                        <button class="btn btn-outline" onclick="bankAction('bank_borrow', 100)">Borrow $100</button>
+                        <button class="btn btn-outline" onclick="bankAction('bank_return', 100)">Return $100</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player Ledger -->
+            <div class="bank-ledger card">
+                <h3>Player Ledger &amp; Balances</h3>
+                <div class="ledger-list" id="bank-players-list"></div>
+            </div>
+
+            <!-- Roll Log -->
+            <div class="roll-log card">
+                <h3>Recent Rolls &amp; Events</h3>
+                <div class="log-stream" id="bank-log-stream">
+                    <div class="card-placeholder">No rolls yet.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- ════════════════════ AUTH MODAL ════════════════════════════ -->
+<div class="modal-backdrop hide" id="auth-modal">
+    <div class="modal-card">
+        <button class="modal-close" onclick="closeAuthModal()">✕</button>
+        <div class="modal-tabs">
+            <button class="tab-btn active" id="tab-login" onclick="switchAuthTab('login')">Sign In</button>
+            <button class="tab-btn" id="tab-register" onclick="switchAuthTab('register')">Create Account</button>
+        </div>
+
+        <!-- Google Sign-In -->
+        <div class="google-auth-box">
+            <div id="g_id_onload"></div>
+            <div id="google-btn-container"></div>
+            <button class="btn btn-google-demo" onclick="demoGoogleLogin()">
+                <svg width="18" height="18" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+                <span>One-Click Google Login</span>
+            </button>
+        </div>
+
+        <div class="divider"><span>OR WITH EMAIL</span></div>
+
+        <!-- Login Form -->
+        <form id="login-form" onsubmit="handleLoginSubmit(event)">
+            <div class="form-group">
+                <label>Username or Email</label>
+                <input type="text" id="login-username" required placeholder="Enter username or email">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="login-password" required placeholder="Enter password">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Sign In to Play</button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="register-form" class="hide" onsubmit="handleRegisterSubmit(event)">
+            <div class="form-group">
+                <label>Username *</label>
+                <input type="text" id="reg-username" required placeholder="Unique username">
+            </div>
+            <div class="form-group">
+                <label>Email *</label>
+                <input type="email" id="reg-email" required placeholder="your.email@example.com">
+            </div>
+            <div class="form-group">
+                <label>Password * (min 6 chars)</label>
+                <input type="password" id="reg-password" required minlength="6" placeholder="Choose a secure password">
+            </div>
+            <div class="form-group">
+                <label>Display Name</label>
+                <input type="text" id="reg-displayname" placeholder="Name shown at table">
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex:1;">
+                    <label>Avatar</label>
+                    <select id="reg-avatar">
+                        <option value="🤠">🤠 Cowboy</option>
+                        <option value="🥷">🥷 Ninja</option>
+                        <option value="🧙">🧙 Wizard</option>
+                        <option value="👑">👑 Royal</option>
+                        <option value="🦁">🦁 Lion</option>
+                        <option value="💎">💎 Diamond</option>
+                        <option value="🚀">🚀 Rocket</option>
+                        <option value="🎲">🎲 High Roller</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex:2;">
+                    <label>Phone (Optional)</label>
+                    <input type="tel" id="reg-phone" placeholder="Contact number">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-gold btn-block">Create Free Account</button>
+        </form>
+    </div>
+</div>
+
+<!-- ══════════════════ PROFILE MODAL ═══════════════════════════ -->
+<div class="modal-backdrop hide" id="profile-modal">
+    <div class="modal-card modal-lg">
+        <button class="modal-close" onclick="closeProfileModal()">✕</button>
+        <div class="profile-header">
+            <div class="avatar-large" id="prof-avatar-display">🤠</div>
+            <div class="profile-title-area">
+                <h2 id="prof-name-display">Player Name</h2>
+                <p id="prof-email-display" class="text-muted">player@example.com</p>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-val" id="stat-chips">$1,000</div>
+                <div class="stat-lbl">Poker Chips</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" id="stat-vault">$1,000</div>
+                <div class="stat-lbl">Bank Balance</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" id="stat-games">0</div>
+                <div class="stat-lbl">Games Played</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" id="stat-wins">0</div>
+                <div class="stat-lbl">Games Won</div>
+            </div>
+        </div>
+
+        <form id="profile-form" onsubmit="handleProfileUpdate(event)">
+            <h3 class="section-title">Edit Profile</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Display Name</label>
+                    <input type="text" id="prof-displayname" required>
+                </div>
+                <div class="form-group">
+                    <label>Avatar</label>
+                    <select id="prof-avatar">
+                        <option value="🤠">🤠 Cowboy</option>
+                        <option value="🥷">🥷 Ninja</option>
+                        <option value="🧙">🧙 Wizard</option>
+                        <option value="👑">👑 Royal</option>
+                        <option value="🦁">🦁 Lion</option>
+                        <option value="💎">💎 Diamond</option>
+                        <option value="🚀">🚀 Rocket</option>
+                        <option value="🎲">🎲 High Roller</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" id="prof-phone" placeholder="+251 911 234 567">
+                </div>
+                <div class="form-group">
+                    <label>Preferred Game</label>
+                    <select id="prof-pregame">
+                        <option value="POKER">Texas Hold'em Poker</option>
+                        <option value="BANK">Banker Agrish Game</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Bio / Status</label>
+                <textarea id="prof-bio" rows="2" placeholder="Tell other players about yourself…"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="prof-sound" checked>
+                    <span>Enable Sound Effects</span>
+                </label>
+            </div>
+            <button type="submit" class="btn btn-gold btn-block">💾 Save Profile</button>
+        </form>
+
+        <div class="profile-logs">
+            <h3 class="section-title">Game Activity Log</h3>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Time</th><th>Game</th><th>Action</th><th>Amount</th><th>Details</th></tr>
+                    </thead>
+                    <tbody id="prof-logs-body">
+                        <tr><td colspan="5" style="text-align:center;">No recent activity</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- ================= BACKEND SERVER URL CONFIGURATION ================= -->
+    <!-- When hosting this frontend on Plesk (www.agrawali.com.et) while the backend runs
+         on Render or another free cloud host, set your live server URL below: -->
+    <script>
+        // Live Render backend URL connecting frontend (Plesk www.agrawali.com.et) to backend
+        window.AGRISH_SERVER_URL = "https://agrish-games2.onrender.com";
+    </script>
+
+    <!-- Client Application Script -->
+    <script src="app.js"></script>
+</body>
+</html>

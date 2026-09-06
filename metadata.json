@@ -1,0 +1,8 @@
+{
+  "name": "Agrish_main",
+  "description": "A facilitator companion app for Banker Agrish game containing transaction management, player logs, rankings, and a dedicated playing cards dealer window.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
